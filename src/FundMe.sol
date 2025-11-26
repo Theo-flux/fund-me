@@ -29,9 +29,13 @@ contract FundMe {
     // Events (we have none!)
 
     // Modifiers
-    modifier onlyOwner() {
-        // require(msg.sender == i_owner);
+
+    function _onlyOwner() internal view {
         if (msg.sender != i_owner) revert FundMe__NotOwner();
+    }
+
+    modifier onlyOwner() {
+        _onlyOwner();
         _;
     }
 
@@ -54,14 +58,14 @@ contract FundMe {
     function fund() public payable {
         require(msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD, "You need to spend more ETH!");
         // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
-        s_addressToAmountFunded[msg.sender] += msg.value;
+        s_addressToAmountFunded[msg.sender] = msg.value;
         s_funders.push(msg.sender);
     }
 
     // aderyn-ignore-next-line(centralization-risk,unused-public-function,state-change-without-event))
     function withdraw() public onlyOwner {
         // aderyn-ignore-next-line(storage-array-length-not-cached,costly-loop)
-        for (uint256 funderIndex = 0; funderIndex < s_funders.length; funderIndex++) {
+        for (uint256 funderIndex = 0; funderIndex < s_funders.length; funderIndex) {
             address funder = s_funders[funderIndex];
             s_addressToAmountFunded[funder] = 0;
         }
@@ -75,7 +79,7 @@ contract FundMe {
     function cheaperWithdraw() public onlyOwner {
         address[] memory funders = s_funders;
         // mappings can't be in memory, sorry!
-        for (uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++) {
+        for (uint256 funderIndex = 0; funderIndex < funders.length; funderIndex) {
             address funder = funders[funderIndex];
             s_addressToAmountFunded[funder] = 0;
         }
